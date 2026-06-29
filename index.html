@@ -155,7 +155,7 @@
     let currentRawContent = "";
     let originalFileName = "output";
 
-    // Lắng nghe sự kiện khi chọn file (Giữ nguyên)
+    // Lắng nghe sự kiện khi chọn file
     document.getElementById('fileInput').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -178,32 +178,35 @@
         reader.readAsText(file);
     });
 
-    // Hàm xử lý lõi (Giữ nguyên)
+    // Hàm xử lý lõi
     function processContent(textContent) {
         currentRawContent = textContent;
         generateOutputs();
     }
 
-    // Hàm cập nhật trạng thái giao diện (Giữ nguyên)
+    // Hàm cập nhật trạng thái giao diện
     function generateOutputs() {
         document.getElementById('btnDownload').disabled = false;
     }
 
-    // HÀM THAY ĐỔI: downloadFile
-    // Thay đổi logic lấy dữ liệu trực tiếp từ textarea để giữ lại các chỉnh sửa của người dùng
+    // Hàm tạo file dựa trên tên gốc và định dạng được chọn (Đã sửa lỗi iPad)
     function downloadFile() {
-        // ĐỌC TRỰC TIẾP TỪ TEXTAREA thay vì biến currentRawContent cũ
         let content = document.getElementById('txtPreview').value; 
         if (!content) return;
 
-        // Đọc tùy chọn định dạng mở rộng từ thẻ select
         const selectedFormat = document.getElementById('formatSelect').value;
         
-        // Tạo tên file mới dựa trên tên file gốc cũ
         let filename = `${originalFileName}.${selectedFormat}`;
-        let mimeType = selectedFormat === 'json' ? 'application/json' : 'text/plain';
+        
+        // Cấu hình MIME type thích ứng tốt với iOS/iPadOS
+        let mimeType = 'text/plain';
+        if (selectedFormat === 'json') {
+            mimeType = 'application/json';
+        } else if (selectedFormat === 'lua') {
+            mimeType = 'application/octet-stream'; // Ép iPad tải đúng đuôi .lua
+        }
 
-        // Tạo Blob dữ liệu và tải xuống (Giữ nguyên logic lõi)
+        // Tạo Blob dữ liệu và tải xuống
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
         
