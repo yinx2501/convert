@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình chỉnh sửa và chuyển đổi đuôi file</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --container-bg: #2d2d2d;
+            --text-color: #d4d4d4;
+            --border-color: #444;
+            --accent-color: #007acc;
+            --accent-hover: #005f9e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+
+        .info-box {
+            background-color: #333;
+            border-left: 4px solid var(--accent-color);
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin-top: 10px;
+            background: #333;
+            padding: 10px;
+            border: 1px dashed var(--border-color);
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        select {
+            display: block;
+            margin-top: 10px;
+            background: #333;
+            color: var(--text-color);
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            background-color: #1e1e1e;
+            color: #dcdcaa;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+            width: 100%;
+            transition: background-color 0.2s;
+            font-size: 1em;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            color: #569cd6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Chỉnh sửa và đổi đuôi file</h1>
+    
+    <div class="info-box">
+        <strong>Cách dùng:</strong> Chọn bất kỳ file nào (.txt, .json, .lua...) -> Nội dung sẽ hiển thị bên dưới -> Bạn có thể <b>chỉnh sửa trực tiếp nội dung</b> đó -> Chọn định dạng muốn xuất và bấm Tải xuống. Tên file gốc được giữ nguyên.
+    </div>
+
+    <div class="upload-section">
+        <label for="fileInput">1. Chọn file đầu vào (Hỗ trợ mọi định dạng):</label>
+        <input type="file" id="fileInput">
+    </div>
+
+    <div class="upload-section">
+        <label for="formatSelect">2. Chọn định dạng muốn xuất ra:</label>
+        <select id="formatSelect">
+            <option value="json">Định dạng JSON (.json)</option>
+            <option value="lua">Định dạng LUA (.lua)</option>
+            <option value="txt">Định dạng văn bản (.txt)</option>
+        </select>
+    </div>
+
+    <div class="upload-section">
+        <label>3. Nội dung file (Có thể chỉnh sửa trực tiếp):</label>
+        <textarea id="txtPreview" placeholder="Nội dung file sẽ hiển thị ở đây và cho phép bạn chỉnh sửa..."></textarea>
+        <button id="btnDownload" disabled onclick="downloadFile()">Tải xuống file</button>
+    </div>
+</div>
+
+<script>
+    let currentRawContent = "";
+    let originalFileName = "output";
+
+    // Lắng nghe sự kiện khi chọn file (Giữ nguyên)
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Trích xuất lấy tên file gốc và loại bỏ phần đuôi mở rộng cũ
+        const lastDotIndex = file.name.lastIndexOf('.');
+        if (lastDotIndex !== -1) {
+            originalFileName = file.name.substring(0, lastDotIndex);
+        } else {
+            originalFileName = file.name;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            document.getElementById('txtPreview').value = content;
+            
+            processContent(content);
+        };
+        reader.readAsText(file);
+    });
+
+    // Hàm xử lý lõi (Giữ nguyên)
+    function processContent(textContent) {
+        currentRawContent = textContent;
+        generateOutputs();
+    }
+
+    // Hàm cập nhật trạng thái giao diện (Giữ nguyên)
+    function generateOutputs() {
+        document.getElementById('btnDownload').disabled = false;
+    }
+
+    // HÀM THAY ĐỔI: downloadFile
+    // Thay đổi logic lấy dữ liệu trực tiếp từ textarea để giữ lại các chỉnh sửa của người dùng
+    function downloadFile() {
+        // ĐỌC TRỰC TIẾP TỪ TEXTAREA thay vì biến currentRawContent cũ
+        let content = document.getElementById('txtPreview').value; 
+        if (!content) return;
+
+        // Đọc tùy chọn định dạng mở rộng từ thẻ select
+        const selectedFormat = document.getElementById('formatSelect').value;
+        
+        // Tạo tên file mới dựa trên tên file gốc cũ
+        let filename = `${originalFileName}.${selectedFormat}`;
+        let mimeType = selectedFormat === 'json' ? 'application/json' : 'text/plain';
+
+        // Tạo Blob dữ liệu và tải xuống (Giữ nguyên logic lõi)
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
